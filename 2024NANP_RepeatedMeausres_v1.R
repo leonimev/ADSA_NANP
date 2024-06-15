@@ -120,7 +120,7 @@ plot(TrtTime,by = "Time")
 
 TrtTimedf <- data.frame(TrtTime)
 
-custom_colors <- c("Con" = "navy", "SF1" = "burlywood", "SF2" = "azure4") # define treatment colors
+custom_colors <- c("X" = "navy", "Y" = "burlywood", "Z" = "azure4") # define treatment colors
 
 ggplot(data = TrtTimedf, aes(x = Time, y = emmean, fill = Treatment)) +
   geom_bar(stat = "identity", position = "dodge") +
@@ -185,7 +185,7 @@ plot(TrtTime,by = "Time")
 
 TrtTimedf <- data.frame(TrtTime)
 
-custom_colors <- c("Con" = "navy", "SF1" = "burlywood", "SF2" = "azure4") # define treatment colors
+custom_colors <- c("X" = "navy", "Y" = "burlywood", "Z" = "azure4") # define treatment colors
 
 ggplot(data = TrtTimedf, aes(x = Time, y = emmean, fill = Treatment)) +
   geom_bar(stat = "identity", position = "dodge") +
@@ -197,3 +197,4 @@ ggplot(data = TrtTimedf, aes(x = Time, y = emmean, fill = Treatment)) +
 
 emmip(fit.cs,Treatment~Time,main="interaction means plot",ylab="Mean score")
 multcomp::cld(TrtTime, by = "Time", Letters = "abcdefg", alpha = .05, adjust="none")
+
