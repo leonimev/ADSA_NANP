@@ -147,7 +147,7 @@ for (trt in treatments) {
   }
   SE_acrophase_24 <- sqrt(var_cos_24 + var_sin_24) * (12 / pi) # standard error for 24-hour acrophase
   
-  # For the 4-hour cycle
+  # For the 12-hour cycle
   beta_cos_12 <- fixef(final_model)["cos_12"]
   beta_sin_12 <- fixef(final_model)["sin_12"]
   
@@ -157,9 +157,9 @@ for (trt in treatments) {
     beta_sin_12 <- beta_sin_12 + ifelse(paste0("trt", trt, ":sin_12") %in% names(fixef(final_model)), fixef(final_model)[paste0("trt", trt, ":sin_12")], 0)
   }
   
-  amplitude_4 <- sqrt(beta_cos_12^2 + beta_sin_12^2)
+  amplitude_12 <- sqrt(beta_cos_12^2 + beta_sin_12^2)
   
-  # Calculate SE for 4-hour amplitude
+  # Calculate SE for 12-hour amplitude
   var_cos_12 <- vcov(final_model)["cos_12", "cos_12"]
   var_sin_12 <- vcov(final_model)["sin_12", "sin_12"]
   if (trt != trt_ref) {
@@ -172,16 +172,16 @@ for (trt in treatments) {
       var_sin_12 <- var_sin_12 + 2 * vcov(final_model)["sin_12", paste0("trt", trt, ":sin_12")]
     }
   }
-  SE_amplitude_4 <- sqrt(var_cos_12 + var_sin_12)
+  SE_amplitude_12 <- sqrt(var_cos_12 + var_sin_12)
   
-  # Calculate acrophase_4
+  # Calculate acrophase_12
   if (!is.na(beta_cos_12) && !is.na(beta_sin_12) && !is.nan(beta_cos_12) && !is.nan(beta_sin_12) && beta_cos_12 != 0) {
-    acrophase_4 <- atan2(beta_sin_12, beta_cos_12) * (6 / pi)
-    acrophase_4 <- (acrophase_4 + 12) %% 12  # Ensure acrophase is within 0-12 hours
+    acrophase_12 <- atan2(beta_sin_12, beta_cos_12) * (6 / pi)
+    acrophase_12 <- (acrophase_12 + 12) %% 12  # Ensure acrophase is within 0-12 hours
   } else {
-    acrophase_4 <- NA  # Handle cases where acrophase cannot be calculated
+    acrophase_12 <- NA  # Handle cases where acrophase cannot be calculated
   }
-  SE_acrophase_4 <- sqrt(var_cos_12 + var_sin_12) * (6 / pi) # standard error for 4-hour acrophase
+  SE_acrophase_12 <- sqrt(var_cos_12 + var_sin_12) * (6 / pi) # standard error for 4-hour acrophase
   
   # Calculate mesor
   mesor <- fixef(final_model)["(Intercept)"]
@@ -192,8 +192,8 @@ for (trt in treatments) {
   # Confidence intervals
   CI_amplitude_24 <- c(amplitude_24 - 1.96 * SE_amplitude_24, amplitude_24 + 1.96 * SE_amplitude_24)
   CI_acrophase_24 <- c(acrophase_24 - 1.96 * SE_acrophase_24, acrophase_24 + 1.96 * SE_acrophase_24)
-  CI_amplitude_4 <- c(amplitude_4 - 1.96 * SE_amplitude_4, amplitude_4 + 1.96 * SE_amplitude_4)
-  CI_acrophase_4 <- c(acrophase_4 - 1.96 * SE_acrophase_4, acrophase_4 + 1.96 * SE_acrophase_4)
+  CI_amplitude_12 <- c(amplitude_12 - 1.96 * SE_amplitude_12, amplitude_12 + 1.96 * SE_amplitude_12)
+  CI_acrophase_12 <- c(acrophase_12 - 1.96 * SE_acrophase_12, acrophase_12 + 1.96 * SE_acrophase_12)
   
   results <- rbind(results, data.frame(
     Treatment = trt,
@@ -206,14 +206,14 @@ for (trt in treatments) {
     SE_Acrophase_24 = SE_acrophase_24,
     CI_Acrophase_24_Lower = CI_acrophase_24[1],
     CI_Acrophase_24_Upper = CI_acrophase_24[2],
-    Amplitude_4 = amplitude_4,
-    SE_Amplitude_4 = SE_amplitude_4,
-    CI_Amplitude_4_Lower = CI_amplitude_4[1],
-    CI_Amplitude_4_Upper = CI_amplitude_4[2],
-    Acrophase_4 = acrophase_4,
-    SE_Acrophase_4 = SE_acrophase_4,
-    CI_Acrophase_4_Lower = CI_acrophase_4[1],
-    CI_Acrophase_4_Upper = CI_acrophase_4[2]
+    Amplitude_12 = amplitude_12,
+    SE_Amplitude_12 = SE_amplitude_12,
+    CI_Amplitude_12_Lower = CI_amplitude_12[1],
+    CI_Amplitude_12_Upper = CI_amplitude_12[2],
+    Acrophase_12 = acrophase_12,
+    SE_Acrophase_12 = SE_acrophase_12,
+    CI_Acrophase_12_Lower = CI_acrophase_12[1],
+    CI_Acrophase_12_Upper = CI_acrophase_12[2]
   ))
 }
 # Print results
@@ -236,21 +236,21 @@ for (i in 1:(nrow(results) - 1)) {
       sqrt(results$SE_Acrophase_24[i]^2 + results$SE_Acrophase_24[j]^2)
     p_value_acrophase_24 <- 2 * pt(-abs(t_acrophase_24), df = nrow(data_cleaned) - length(fixef(final_model)))
     
-    # For 4-hour amplitude
-    t_amplitude_4 <- (results$Amplitude_4[i] - results$Amplitude_4[j]) / 
-      sqrt(results$SE_Amplitude_4[i]^2 + results$SE_Amplitude_4[j]^2)
-    p_value_amplitude_4 <- 2 * pt(-abs(t_amplitude_4), df = nrow(data_cleaned) - length(fixef(final_model)))
+    # For 12-hour amplitude
+    t_amplitude_12 <- (results$Amplitude_12[i] - results$Amplitude_12[j]) / 
+      sqrt(results$SE_Amplitude_12[i]^2 + results$SE_Amplitude_12[j]^2)
+    p_value_amplitude_12 <- 2 * pt(-abs(t_amplitude_12), df = nrow(data_cleaned) - length(fixef(final_model)))
     
-    # For 4-hour acrophase
-    t_acrophase_4 <- (results$Acrophase_4[i] - results$Acrophase_4[j]) / 
-      sqrt(results$SE_Acrophase_4[i]^2 + results$SE_Acrophase_4[j]^2)
-    p_value_acrophase_4 <- 2 * pt(-abs(t_acrophase_4), df = nrow(data_cleaned) - length(fixef(final_model)))
+    # For 12-hour acrophase
+    t_acrophase_12 <- (results$Acrophase_12[i] - results$Acrophase_12[j]) / 
+      sqrt(results$SE_Acrophase_12[i]^2 + results$SE_Acrophase_12[j]^2)
+    p_value_acrophase_12 <- 2 * pt(-abs(t_acrophase_12), df = nrow(data_cleaned) - length(fixef(final_model)))
     
     cat("Comparison of", trt1, "and", trt2, ":\n")
     cat("24-hour amplitude: t =", t_amplitude_24, ", p-value =", p_value_amplitude_24, "\n")
     cat("24-hour acrophase: t =", t_acrophase_24, ", p-value =", p_value_acrophase_24, "\n")
-    cat("4-hour amplitude: t =", t_amplitude_4, ", p-value =", p_value_amplitude_4, "\n")
-    cat("4-hour acrophase: t =", t_acrophase_4, ", p-value =", p_value_acrophase_4, "\n\n")
+    cat("4-hour amplitude: t =", t_amplitude_12, ", p-value =", p_value_amplitude_12, "\n")
+    cat("4-hour acrophase: t =", t_acrophase_12, ", p-value =", p_value_acrophase_12, "\n\n")
   }
 }
 
