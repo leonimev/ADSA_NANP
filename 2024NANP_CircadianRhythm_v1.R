@@ -60,12 +60,12 @@ data <- data %>%
   mutate(
     cos_24 = cos(2 * pi * time / 24),
     sin_24 = sin(2 * pi * time / 24),
-    cos_4 = cos(2 * pi * time / 4),
-    sin_4 = sin(2 * pi * time / 4)
+    cos_12 = cos(2 * pi * time / 12),
+    sin_12 = sin(2 * pi * time / 12)
   )
 
 # Fit the initial mixed-effects model. (1|cow) sets cow as a random effect
-initial_model <- lmer(Response ~ trt * cos_24 + trt * sin_24 + cos_4 + sin_4 + (1|cow), data = data)
+initial_model <- lmer(Response ~ trt * cos_24 + trt * sin_24 + cos_12 + sin_12 + (1|cow), data = data)
 
 # Print the summary of the initial model
 summary(initial_model)
@@ -83,7 +83,7 @@ cat("Number of outliers removed:", num_outliers, "\n")
 data_cleaned <- data[!outliers, ]
 
 # Fit the final mixed-effects model with cow as a random effect
-final_model <- lmer(Response ~ trt * cos_24 + trt * sin_24 + cos_4 + sin_4 + (1|cow), data = data_cleaned)
+final_model <- lmer(Response ~ trt * cos_24 + trt * sin_24 + cos_12 + sin_12 + (1|cow), data = data_cleaned)
 
 # Print the summary of the final model
 summary(final_model)
@@ -91,7 +91,7 @@ summary(final_model)
 # Perform the zero-amplitude likelihood ratio test. 
 # This determines if there is a rhythm in the Response variable
 linear_model <- lmer(Response ~ 1 + trt + (1|cow), data = data_cleaned)
-final_model <- lmer(Response ~ trt*cos_24 + trt*sin_24 + cos_4 + sin_4 + (1|cow), data = data_cleaned)
+final_model <- lmer(Response ~ trt*cos_24 + trt*sin_24 + cos_12 + sin_12 + (1|cow), data = data_cleaned)
 
 lr_stat <- 2 * (logLik(final_model) - logLik(linear_model))
 p_value <- pchisq(lr_stat, df = 4, lower.tail = FALSE)
@@ -148,40 +148,40 @@ for (trt in treatments) {
   SE_acrophase_24 <- sqrt(var_cos_24 + var_sin_24) * (12 / pi) # standard error for 24-hour acrophase
   
   # For the 4-hour cycle
-  beta_cos_4 <- fixef(final_model)["cos_4"]
-  beta_sin_4 <- fixef(final_model)["sin_4"]
+  beta_cos_12 <- fixef(final_model)["cos_12"]
+  beta_sin_12 <- fixef(final_model)["sin_12"]
   
   # Adjust for treatment-specific coefficients
   if (trt != trt_ref) {
-    beta_cos_4 <- beta_cos_4 + ifelse(paste0("trt", trt, ":cos_4") %in% names(fixef(final_model)), fixef(final_model)[paste0("trt", trt, ":cos_4")], 0)
-    beta_sin_4 <- beta_sin_4 + ifelse(paste0("trt", trt, ":sin_4") %in% names(fixef(final_model)), fixef(final_model)[paste0("trt", trt, ":sin_4")], 0)
+    beta_cos_12 <- beta_cos_12 + ifelse(paste0("trt", trt, ":cos_12") %in% names(fixef(final_model)), fixef(final_model)[paste0("trt", trt, ":cos_12")], 0)
+    beta_sin_12 <- beta_sin_12 + ifelse(paste0("trt", trt, ":sin_12") %in% names(fixef(final_model)), fixef(final_model)[paste0("trt", trt, ":sin_12")], 0)
   }
   
-  amplitude_4 <- sqrt(beta_cos_4^2 + beta_sin_4^2)
+  amplitude_4 <- sqrt(beta_cos_12^2 + beta_sin_12^2)
   
   # Calculate SE for 4-hour amplitude
-  var_cos_4 <- vcov(final_model)["cos_4", "cos_4"]
-  var_sin_4 <- vcov(final_model)["sin_4", "sin_4"]
+  var_cos_12 <- vcov(final_model)["cos_12", "cos_12"]
+  var_sin_12 <- vcov(final_model)["sin_12", "sin_12"]
   if (trt != trt_ref) {
-    if (paste0("trt", trt, ":cos_4") %in% colnames(vcov(final_model))) {
-      var_cos_4 <- var_cos_4 + vcov(final_model)[paste0("trt", trt, ":cos_4"), paste0("trt", trt, ":cos_4")]
-      var_cos_4 <- var_cos_4 + 2 * vcov(final_model)["cos_4", paste0("trt", trt, ":cos_4")]
+    if (paste0("trt", trt, ":cos_12") %in% colnames(vcov(final_model))) {
+      var_cos_12 <- var_cos_12 + vcov(final_model)[paste0("trt", trt, ":cos_12"), paste0("trt", trt, ":cos_12")]
+      var_cos_12 <- var_cos_12 + 2 * vcov(final_model)["cos_12", paste0("trt", trt, ":cos_12")]
     }
-    if (paste0("trt", trt, ":sin_4") %in% colnames(vcov(final_model))) {
-      var_sin_4 <- var_sin_4 + vcov(final_model)[paste0("trt", trt, ":sin_4"), paste0("trt", trt, ":sin_4")]
-      var_sin_4 <- var_sin_4 + 2 * vcov(final_model)["sin_4", paste0("trt", trt, ":sin_4")]
+    if (paste0("trt", trt, ":sin_12") %in% colnames(vcov(final_model))) {
+      var_sin_12 <- var_sin_12 + vcov(final_model)[paste0("trt", trt, ":sin_12"), paste0("trt", trt, ":sin_12")]
+      var_sin_12 <- var_sin_12 + 2 * vcov(final_model)["sin_12", paste0("trt", trt, ":sin_12")]
     }
   }
-  SE_amplitude_4 <- sqrt(var_cos_4 + var_sin_4)
+  SE_amplitude_4 <- sqrt(var_cos_12 + var_sin_12)
   
   # Calculate acrophase_4
-  if (!is.na(beta_cos_4) && !is.na(beta_sin_4) && !is.nan(beta_cos_4) && !is.nan(beta_sin_4) && beta_cos_4 != 0) {
-    acrophase_4 <- atan2(beta_sin_4, beta_cos_4) * (2 / pi)
-    acrophase_4 <- (acrophase_4 + 4) %% 4  # Ensure acrophase is within 0-12 hours
+  if (!is.na(beta_cos_12) && !is.na(beta_sin_12) && !is.nan(beta_cos_12) && !is.nan(beta_sin_12) && beta_cos_12 != 0) {
+    acrophase_4 <- atan2(beta_sin_12, beta_cos_12) * (6 / pi)
+    acrophase_4 <- (acrophase_4 + 12) %% 12  # Ensure acrophase is within 0-12 hours
   } else {
     acrophase_4 <- NA  # Handle cases where acrophase cannot be calculated
   }
-  SE_acrophase_4 <- sqrt(var_cos_4 + var_sin_4) * (2 / pi) # standard error for 4-hour acrophase
+  SE_acrophase_4 <- sqrt(var_cos_12 + var_sin_12) * (6 / pi) # standard error for 4-hour acrophase
   
   # Calculate mesor
   mesor <- fixef(final_model)["(Intercept)"]
@@ -264,23 +264,23 @@ time_points <- seq(0, 24, length.out = 100)
 calculate_fitted_curve <- function(trt) {
   cos_24_points <- cos(2 * pi * time_points / 24)
   sin_24_points <- sin(2 * pi * time_points / 24)
-  cos_4_points <- cos(2 * pi * time_points / 4)
-  sin_4_points <- sin(2 * pi * time_points / 4)
+  cos_12_points <- cos(2 * pi * time_points / 12)
+  sin_12_points <- sin(2 * pi * time_points / 12)
   
   if (trt == trt_ref) {
     fitted_curve <- (fixef(final_model)["(Intercept)"] +
                        fixef(final_model)["cos_24"] * cos_24_points +
                        fixef(final_model)["sin_24"] * sin_24_points +
-                       fixef(final_model)["cos_4"] * cos_4_points +
-                       fixef(final_model)["sin_4"] * sin_4_points)
+                       fixef(final_model)["cos_12"] * cos_12_points +
+                       fixef(final_model)["sin_12"] * sin_12_points)
   } else {
     fitted_curve <- (fixef(final_model)["(Intercept)"] +
                        fixef(final_model)["cos_24"] * cos_24_points +
                        fixef(final_model)["sin_24"] * sin_24_points +
                        fixef(final_model)[paste0("trt", trt, ":cos_24")] * cos_24_points +
                        fixef(final_model)[paste0("trt", trt, ":sin_24")] * sin_24_points +
-                       fixef(final_model)["cos_4"] * cos_4_points +
-                       fixef(final_model)["sin_4"] * sin_4_points)
+                       fixef(final_model)["cos_12"] * cos_12_points +
+                       fixef(final_model)["sin_12"] * sin_12_points)
   }
   
   return(data.frame(time = time_points, fitted_curve = fitted_curve, trt = trt))
@@ -295,7 +295,7 @@ fitted_curves_df <- do.call(rbind, fitted_curves)
 # Plotting using ggplot
 ggplot() +
   geom_line(data = fitted_curves_df, aes(x = time, y = fitted_curve, color = trt), linewidth = 1, alpha = 0.8) +
-  geom_point(data = data_cleaned, aes(x = time, y = Response, color = trt), size = 3, alpha = 0.6) +
+  #geom_point(data = data_cleaned, aes(x = time, y = Response, color = trt), size = 3, alpha = 0.6) +
   labs(title = "Fitted Curves and Observed Data Points by Treatment", x = "Time (hours)", y = "Response") +
   theme_minimal()
 
